@@ -11,7 +11,7 @@ The default and only preconfigured tool for python is "pylint".
 
 Configuration:
 
-lint-diffs can read a config file from ~/.config/lint-diffs
+`lint-diffs` will read a config files from `~/.config/lint-diffs` and/or `./.lint-diffs`.
 
 Example:
 
@@ -29,7 +29,8 @@ regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>.: [^:]+)
 always_report=(E.*|W.*)
 ```
 
-In this example, a flake8 and pylint are run on every diff file ending in `.py`.   Additionally a ruby linter has been added.
+In this example, a flake8 and pylint are run on every diff file ending in `.py`.   
+Additionally, a ruby linter has been added.
 
 To add new linters:
  - The linter has to report to stdout

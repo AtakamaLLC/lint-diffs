@@ -41,6 +41,7 @@ def read_config():
         [
             os.path.join(os.path.dirname(__file__), 'default_config'),
             os.path.expanduser(USER_CONFIG),
+            ".lint_diffs",
         ]
     )
 
