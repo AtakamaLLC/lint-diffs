@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/AtakamaLLC/lint-diffs.svg?branch=master)](https://travis-ci.com/AtakamaLLC/lint-diffs)
-[![Code Coverage](https://codecov.io/gh/AtakamaLLC/lint-diffs/branch/master/graph/badge.svg)](https://codecov.io/gh/AtakamaLLC/lint-diffs)"
+[![Code Coverage](https://codecov.io/gh/AtakamaLLC/lint-diffs/branch/master/graph/badge.svg)](https://codecov.io/gh/AtakamaLLC/lint-diffs)
 
 ### lint-diffs
 
