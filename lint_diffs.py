@@ -21,6 +21,7 @@ from unidiff import PatchSet
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
 __version__ = "0.1.0"
+USER_CONFIG = "~/.config/lint-diffs"
 
 
 class LintResult(NamedTuple):
@@ -39,7 +40,7 @@ def read_config():
     config.read(
         [
             os.path.join(os.path.dirname(__file__), 'default_config'),
-            os.path.expanduser("~/.config/lint-diffs")
+            os.path.expanduser(USER_CONFIG),
         ]
     )
 

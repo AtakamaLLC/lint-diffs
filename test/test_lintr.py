@@ -38,36 +38,37 @@ def test_noconf(capsys):
             patch("os.path.expanduser", returns=""):
         conf.write(b"""
         """)
-        sys.argv = ['whatever', '--rcfile', conf.name]
-        try:
-            main()
-        except SystemExit as ex:
-            assert ex.code != 0
+        conf.flush()
+        with patch("lint_diffs.USER_CONFIG", conf.name):
+            try:
+                main()
+            except SystemExit as ex:
+                assert ex.code != 0
 
-        cap = capsys.readouterr()
+            cap = capsys.readouterr()
 
-        assert 'C0111' not in cap.out
-        assert 'E0602' in cap.out
-        assert 'W0613' not in cap.out
+            assert 'C0111' not in cap.out
+            assert 'E0602' in cap.out
+            assert 'W0613' not in cap.out
 
 
 def test_always_report(capsys):
     """Basic main test."""
     with patch.object(sys, "stdin", io.StringIO(diff)), \
             NamedTemporaryFile() as conf:
-
         conf.write(b"""
 [pylint]
 always_report=C0111
         """)
-        sys.argv = ['whatever', '--rcfile', conf.name]
-        try:
-            main()
-        except SystemExit as ex:
-            assert ex.code != 0
+        conf.flush()
+        with patch("lint_diffs.USER_CONFIG", conf.name):
+            try:
+                main()
+            except SystemExit as ex:
+                assert ex.code != 0
 
-        cap = capsys.readouterr()
+            cap = capsys.readouterr()
 
-        assert 'C0111' in cap.out
-        assert 'E0602' in cap.out
-        assert 'W0613' not in cap.out
+            assert 'C0111' in cap.out
+            assert 'E0602' in cap.out
+            assert 'W0613' not in cap.out
