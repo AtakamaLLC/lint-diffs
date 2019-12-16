@@ -4,3 +4,4 @@ pytest-coverage
 pytest-xdist
 unidiff
 flit
+codecov
