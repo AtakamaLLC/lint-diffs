@@ -20,7 +20,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 USER_CONFIG = "~/.config/lint-diffs"
 
 
@@ -93,8 +93,6 @@ def do_lint(config, linter, diffs, files):
         diffs: dict of filename to lineno set
         files: list of file paths
     """
-    log.debug("diffs: %s", diffs)
-
     cmd = config[linter]["command"]
     always_report = config[linter].get("always_report")
     regex = config[linter]["regex"]
@@ -162,6 +160,8 @@ def main():
     config = read_config()
     diffs = read_diffs()
 
+    log.debug("diffs: %s", list(diffs))
+
     linters = {}
     for fname in diffs:
         _, ext = os.path.splitext(fname)
@@ -176,7 +176,6 @@ def main():
         sys.exit(1)
 
     log.debug("linters: %s", linters)
-    log.debug("diffs: %s", list(diffs))
 
     exitcode = 0
     for linter, files in linters.items():
