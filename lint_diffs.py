@@ -149,11 +149,13 @@ def main():
     # most stuff should be in the config, but we allow a special "--debug"
     # flag that doesn't get passed to the linter
     # if this is a problem, remove it
-    debug = sys.argv.index("--debug")
-    if debug >= 0:
+    try:
+        debug = sys.argv.index("--debug")
         sys.argv.pop(debug)
         logging.basicConfig()
         log.setLevel(logging.DEBUG)
+    except ValueError:
+        pass
 
     config = read_config()
     diffs = read_diffs()
