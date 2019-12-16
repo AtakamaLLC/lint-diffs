@@ -5,15 +5,14 @@ python:
   - '3.6'
   - '3.7'
   - '3.8'
+script:
+  - pytest --cov=. -n=2 . 
 
 jobs:
     include: 
-    - script:
-        - pytest --cov=. -n=2 . 
     - name: lint
       python: 
         - '3.6'
-      stage: lint/unit
       script:
         - pylint *.py test/test_*.py
     - stage: deploy
