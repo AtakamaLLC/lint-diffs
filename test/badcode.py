@@ -1,2 +1,2 @@
 def foo(baz):
-    print(bar)
+    print(bar);

@@ -1,0 +1,8 @@
+[pylint]
+extensions=.py
+command=pylint
+regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
+
+[flake8]
+command=flake8
+regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)

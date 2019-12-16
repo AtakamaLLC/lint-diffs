@@ -1,0 +1,5 @@
+*.swp
+.mypy_cache
+__pycache__
+env/
+dist/

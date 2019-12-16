@@ -1,0 +1,8 @@
+[FORMAT]
+max-line-length=160
+
+[BASIC]
+good-names=log
+
+[DESIGN]
+max-locals=20

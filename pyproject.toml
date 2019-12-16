@@ -1,0 +1,21 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "lint_diffs"
+author = "Atakama, LLC"
+author-email = "dev-support@atakama.com"
+home-page = "https://github.com/atakamallc/lint-diffs"
+description-file="README.md"
+# MUST be from this list: https://pypi.org/pypi?%3Aaction=list_classifiers
+classifiers=["Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires = ["unidiff"]
+requires-python = ">=3.6"
+
+[tool.flit.scripts]
+lint-diffs = "lint_diffs:main"
