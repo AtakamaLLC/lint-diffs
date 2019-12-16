@@ -20,7 +20,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 USER_CONFIG = "~/.config/lint-diffs"
 
 
