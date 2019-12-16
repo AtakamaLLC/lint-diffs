@@ -1,5 +1,5 @@
 pylint
-pytest
+pytest>=4.4.0
 pytest-coverage
 pytest-xdist
 unidiff

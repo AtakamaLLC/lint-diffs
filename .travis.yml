@@ -1,21 +1,21 @@
 language: python
 cache: pip
 sudo: false
+python:
+  - '3.6'
+  - '3.7'
+  - '3.8'
 
 jobs:
     include: 
+    - script:
+        - pytest --cov=. -n=2 . 
     - name: lint
+      python: 
+        - '3.6'
       stage: lint/unit
       script:
         - pylint *.py test/test_*.py
-    - name: unit
-      script:
-        # tempoarily skip the path tests
-        - pytest --cov=. -n=2 . 
-      python:
-        - '3.6'
-        - '3.7'
-        - '3.8'
     - stage: deploy
       python: 
         - '3.6'
