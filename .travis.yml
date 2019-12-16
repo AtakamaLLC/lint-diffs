@@ -6,7 +6,7 @@ python:
   - '3.7'
   - '3.8'
 script:
-  - pytest --cov=. -n=2 . 
+  - pytest -v --cov=. -n=2 . 
 
 jobs:
     include: 

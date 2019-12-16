@@ -36,12 +36,12 @@ def test_conf_read():
     with NamedTemporaryFile() as conf:
         conf.write(b"""
 [pylint]
-always_report=C0111
+always_report=W0613
         """)
         conf.flush()
         with patch("lint_diffs.USER_CONFIG", conf.name):
             conf = read_config()
-            assert conf["pylint"]["always_report"] == 'C0111'
+            assert conf["pylint"]["always_report"] == 'W0613'
             assert conf["pylint"]["command"]
             assert conf["pylint"]["regex"]
 
@@ -61,9 +61,8 @@ def test_noconf(capsys):
 
             cap = capsys.readouterr()
 
-            assert 'C0111' not in cap.out
-            assert 'E0602' in cap.out
             assert 'W0613' not in cap.out
+            assert 'E0602' in cap.out
 
 
 def test_always_report(capsys):
@@ -72,7 +71,7 @@ def test_always_report(capsys):
             NamedTemporaryFile() as conf:
         conf.write(b"""
 [pylint]
-always_report=C0111
+always_report=W0613
         """)
         conf.flush()
         with patch("lint_diffs.USER_CONFIG", conf.name):
@@ -83,6 +82,5 @@ always_report=C0111
 
             cap = capsys.readouterr()
 
-            assert 'C0111' in cap.out
+            assert 'W0613' in cap.out
             assert 'E0602' in cap.out
-            assert 'W0613' not in cap.out

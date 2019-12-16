@@ -130,7 +130,7 @@ def do_lint(config, linter, diffs, files):
                 ignore_lno = True
 
         if not ignore_lno:
-            if lno not in diffs[fname]:
+            if lno not in diffs.get(fname, []):
                 continue
 
         lint_cnt += 1
