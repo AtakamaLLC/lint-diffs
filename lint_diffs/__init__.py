@@ -20,7 +20,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 USER_CONFIG = "~/.config/lint-diffs"
 
 
@@ -51,18 +51,23 @@ def read_config():
 
         ext = sec.get("extensions")
         if not ext:
+            log.debug("Ignoring section with no file extensions")
             continue
         cmd = sec.get("command")
-        regex = sec.get("regex")
+        regex = sec.get("regex", "")
+        ok = True
         if "file" not in regex:
             log.error("Invalid regex for %s, skipping", secname)
+            ok = False
         if not cmd:
             log.error("Invalid command for %s, skipping", secname)
+            ok = False
+
+        if not ok:
+            continue
 
         for ext in ext.split(" "):
             ext.strip()
-            if not ext:
-                continue
             if ext not in final:
                 final[ext] = []
 
@@ -103,6 +108,11 @@ def do_lint(config, linter, diffs, files):
 
     ret = subprocess.run(cmd + sys.argv[1:] + files, stdout=subprocess.PIPE, encoding="utf8", check=False)
 
+    return parse_output(diffs, ret, regex, always_report)
+
+
+def parse_output(diffs, ret, regex, always_report):
+    """Parse linter output."""
     skipped_cnt = 0
     total_cnt = 0
     lint_cnt = 0
@@ -172,8 +182,8 @@ def main():
                 linters[linter_name].add(fname)
 
     if not linters:
-        print("ERROR: no configured linters", file=sys.stderr)
-        sys.exit(1)
+        log.debug("no files need linting")
+        return
 
     log.debug("linters: %s", linters)
 
