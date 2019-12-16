@@ -141,6 +141,30 @@ always_report=W0613
             assert 'E0602' in cap.out
 
 
+def test_noline_noerr(capsys):
+    """One bad code line, but not in diff."""
+    pylint_output = """************* Module badcode
+test/badcode.py:1:10: E0602: Undefined variable 'bar' (undefined-variable)
+
+----------------------------------------------------------------------
+Your code has been rated at -40.00/10 (previous run: -40.00/10, +0.00)"""
+
+    class Ret:  # pylint: disable=all
+        stdout = pylint_output
+        returncode = 1
+
+        def __init__(self, *a, **k):
+            pass
+
+    with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)):
+        with patch("subprocess.run", Ret):
+            main()
+
+            cap = capsys.readouterr()
+
+            assert "test/badcode.py" not in cap.out
+
+
 def test_debug_mode(caplog):
     """Basic main test."""
     with patch.object(sys, "stdin", io.StringIO("")):

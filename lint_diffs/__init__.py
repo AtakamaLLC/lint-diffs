@@ -190,8 +190,8 @@ def main():
     exitcode = 0
     for linter, files in linters.items():
         ret = do_lint(config, linter, diffs, list(files))
-        if ret.returncode != 0:
-            exitcode = ret.returncode
+        if ret.linted > 0:
+            exitcode = ret.returncode or 1
 
     if exitcode != 0:
         sys.exit(exitcode)
