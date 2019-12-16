@@ -6,7 +6,7 @@ import logging
 
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
-from lint_diffs import main, read_diffs
+from lint_diffs import main, read_diffs, read_config
 
 
 log = logging.getLogger("lint_diffs")
@@ -31,11 +31,25 @@ def test_diff_read():
         assert dlines["test/badcode.py"] == {2}
 
 
+def test_conf_read():
+    """User config test."""
+    with NamedTemporaryFile() as conf:
+        conf.write(b"""
+[pylint]
+always_report=C0111
+        """)
+        conf.flush()
+        with patch("lint_diffs.USER_CONFIG", conf.name):
+            conf = read_config()
+            assert conf["pylint"]["always_report"] == 'C0111'
+            assert conf["pylint"]["command"]
+            assert conf["pylint"]["regex"]
+
+
 def test_noconf(capsys):
     """Basic main test."""
     with patch.object(sys, "stdin", io.StringIO(diff)), \
-            NamedTemporaryFile() as conf, \
-            patch("os.path.expanduser", returns=""):
+            NamedTemporaryFile() as conf:
         conf.write(b"""
         """)
         conf.flush()
