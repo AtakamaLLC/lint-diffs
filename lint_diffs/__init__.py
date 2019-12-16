@@ -171,7 +171,12 @@ def main():
                     linters[linter_name] = set()
                 linters[linter_name].add(fname)
 
+    if not linters:
+        print("ERROR: no configured linters", file=sys.stderr)
+        sys.exit(1)
+
     log.debug("linters: %s", linters)
+    log.debug("diffs: %s", list(diffs))
 
     exitcode = 0
     for linter, files in linters.items():
