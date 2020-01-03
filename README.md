@@ -10,6 +10,8 @@ First you need some diffs, then you pipe it to lint-diffs:
 
 `git diff -U0 origin/master | lint-diffs`
 
+... or in mercurial: `hg outgoing -p | lint-diffs`
+
 The default and only preconfigured tool for python is "pylint".
 
 Configuration:
