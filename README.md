@@ -35,10 +35,14 @@ always_report=(E.*|W.*)
 
 [eslint]
 extensions=.js
+
+[shellcheck]
+extensions=.sh
 ```
 
 In this example, a flake8 and pylint are run on every diff file ending in `.py`. 
-Additionally, the ruby linter has been enabled, and is set to always report warnings.
+Additionally, ruby, eslint and shell script linters have been enabled.   The ruby linter has been modified 
+to always report warnings, on any changed file, not just changed lines.
 
 To add new linters:
  - The linter has to report to stdout
