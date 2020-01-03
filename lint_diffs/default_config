@@ -10,9 +10,14 @@ regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
 [rubocop]
 command=rubocop app spec
 regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>.: [^:]+)
-always_report=(E.*)
+always_report=E
 
 [eslint]
-command=./node_modules/.bin/eslint -f unix
+command=eslint -f unix
 regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
-always_report=(Error.*)
+always_report=Error
+
+[shellcheck]
+command=shellcheck -f gcc
+regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
+always_report=error:
