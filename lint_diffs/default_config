@@ -6,3 +6,13 @@ regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
 [flake8]
 command=flake8
 regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
+
+[rubocop]
+command=rubocop app spec
+regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>.: [^:]+)
+always_report=(E.*)
+
+[eslint]
+command=./node_modules/.bin/eslint -f unix
+regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
+always_report=(Error.*)
