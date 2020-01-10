@@ -20,7 +20,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.7"
+__version__ = "0.1.9"
 USER_CONFIG = "~/.config/lint-diffs"
 
 
@@ -32,12 +32,13 @@ class LintResult(NamedTuple):
     always: int             # always match err
     total: int              # total lines in output
     other: int              # lint errs not in my lines
-    always: int             # lint errs always reported
     returncode: int         # err code
 
     @property
     def linted(self):
-        return self.always + self.mine
+        """Total of always + mine."""
+        # bug in pylint + namedtuple
+        return self.always + self.mine     # pylint: disable=no-member
 
 
 def read_config():
@@ -79,6 +80,10 @@ def read_config():
                 final[ext] = []
 
             final[ext].append(secname)
+
+    if "main" in final:
+        for key, val in final["main"].items():
+            final[key] = val
 
     return final
 
@@ -130,7 +135,7 @@ def parse_output(config, diffs, ret, regex, always_report):
         match = re.match(regex, line)
         if not match:
             skipped_cnt += 1
-            if config["debug"]:
+            if config.get("debug"):
                 print("#", line)
             continue
 
@@ -141,15 +146,15 @@ def parse_output(config, diffs, ret, regex, always_report):
         except ValueError:
             log.debug("lineno parse issue: %s", line)
 
-        ignore_lno = False
+        always_match = False
 
         if always_report:
             match = re.match(always_report, err)
             if match:
-                ignore_lno = True
+                always_match = True
 
         if lno not in diffs.get(fname, []):
-            if not ignore_lno:
+            if not always_match:
                 other_cnt += 1
                 continue
             always_cnt += 1
@@ -181,7 +186,8 @@ def main():
         pass
 
     config = read_config()
-    config["debug"] = debug
+    if debug:
+        config["debug"] = True
     diffs = read_diffs()
 
     log.debug("diffs: %s", list(diffs))

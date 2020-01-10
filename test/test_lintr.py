@@ -41,8 +41,9 @@ def test_parse_out():
         stdout = PYLINT_OUTPUT
         returncode = 0
 
+    config = {}
     regex = r"(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>[^ :]+)"
-    ret = parse_output({"test/badcode.py": [2]}, Ret(), regex, "W0613")
+    ret = parse_output(config, {"test/badcode.py": [2]}, Ret(), regex, "W0613")
     assert ret.skipped == 4
     assert ret.linted == 2
 
@@ -59,6 +60,9 @@ def test_conf_read():
     """User config test."""
     with NamedTemporaryFile() as conf:
         conf.write(b"""
+[main]
+debug=True
+
 [pylint]
 always_report=W0613
         """)
@@ -68,6 +72,7 @@ always_report=W0613
             assert conf["pylint"]["always_report"] == 'W0613'
             assert conf["pylint"]["command"]
             assert conf["pylint"]["regex"]
+            assert conf["debug"]
 
 
 def test_conf_invalid(caplog):
@@ -108,6 +113,7 @@ def test_noconf(capsys):
         conf.write(b"""
         """)
         conf.flush()
+        sys.argv = ["whatever"]
         with patch("lint_diffs.USER_CONFIG", conf.name):
             try:
                 main()
@@ -125,10 +131,14 @@ def test_always_report(capsys):
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), \
             NamedTemporaryFile() as conf:
         conf.write(b"""
+[main]
+debug=True
+
 [pylint]
 always_report=W0613
         """)
         conf.flush()
+        sys.argv = ["whatever"]
         with patch("lint_diffs.USER_CONFIG", conf.name):
             try:
                 main()
@@ -136,6 +146,8 @@ always_report=W0613
                 assert ex.code != 0
 
             cap = capsys.readouterr()
+
+            log.info(cap.out)
 
             assert 'W0613' in cap.out
             assert 'E0602' in cap.out

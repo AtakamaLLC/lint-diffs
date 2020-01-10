@@ -1,12 +1,24 @@
 [pylint]
 extensions=.py
 command=pylint
-regex=(?P<file>[^:]+):(?P<line>\d+) \[(?P<err>[^ \]]+)
+# this is the default.  if you have a custom .pylintrc, you'll need to change it
+regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
 
 [flake8]
 command=flake8
 regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
 
+[rubocop]
+command=rubocop app spec
+regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>.: [^:]+)
+always_report=E
+
 [eslint]
-command=eslint -f visualstudio
-regex=(?P<file>[^\(]+)\((?P<line>\d+),[^)]+: (?P<err>[^:]+)
+command=eslint -f unix
+regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
+always_report=Error
+
+[shellcheck]
+command=shellcheck -f gcc
+regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
+always_report=error:
