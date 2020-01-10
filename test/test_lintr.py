@@ -107,7 +107,7 @@ regex=(?P<file>[^:]+):(?P<line>\\d+):[^:]+: (?P<err>[^ :]+)
 
 
 def test_noconf(capsys):
-    """Test with no conf"""
+    """Test with no conf."""
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), \
             NamedTemporaryFile() as conf:
         conf.write(b"""
@@ -183,4 +183,3 @@ def test_debug_mode(caplog):
         sys.argv = ["whatever", "test/goodcode.py", "--debug"]
         main()
         assert "DEBUG" in caplog.text
-
