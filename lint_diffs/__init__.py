@@ -27,10 +27,17 @@ USER_CONFIG = "~/.config/lint-diffs"
 class LintResult(NamedTuple):
     """Summary results from running diff-lint."""
 
-    skipped: int
-    linted: int
-    total: int
-    returncode: int
+    skipped: int            # regex mismatch
+    mine: int               # my line no
+    always: int             # always match err
+    total: int              # total lines in output
+    other: int              # lint errs not in my lines
+    always: int             # lint errs always reported
+    returncode: int         # err code
+
+    @property
+    def linted(self):
+        return self.always + self.mine
 
 
 def read_config():
@@ -106,22 +113,25 @@ def do_lint(config, linter, diffs, files):
 
     cmd = cmd.split(" ")
 
-    ret = subprocess.run(cmd + sys.argv[1:] + files, stdout=subprocess.PIPE, encoding="utf8", check=False)
+    ret = subprocess.run(cmd + sys.argv[1:] + files, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8", check=False)
 
-    return parse_output(diffs, ret, regex, always_report)
+    return parse_output(config, diffs, ret, regex, always_report)
 
 
-def parse_output(diffs, ret, regex, always_report):
+def parse_output(config, diffs, ret, regex, always_report):
     """Parse linter output."""
     skipped_cnt = 0
     total_cnt = 0
-    lint_cnt = 0
+    always_cnt = 0
+    mine_cnt = 0
+    other_cnt = 0
     for line in ret.stdout.split("\n"):
         total_cnt += 1
         match = re.match(regex, line)
         if not match:
             skipped_cnt += 1
-            print(line)
+            if config["debug"]:
+                print("#", line)
             continue
 
         fname, lno, err = match["file"], match["line"], match["err"]
@@ -138,15 +148,17 @@ def parse_output(diffs, ret, regex, always_report):
             if match:
                 ignore_lno = True
 
-        if not ignore_lno:
-            if lno not in diffs.get(fname, []):
+        if lno not in diffs.get(fname, []):
+            if not ignore_lno:
+                other_cnt += 1
                 continue
-
-        lint_cnt += 1
+            always_cnt += 1
+        else:
+            mine_cnt += 1
 
         print(line)
 
-    return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt, linted=lint_cnt)
+    return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt, mine=mine_cnt, always=always_cnt, other=other_cnt)
 
 
 def main():
@@ -159,15 +171,17 @@ def main():
     # most stuff should be in the config, but we allow a special "--debug"
     # flag that doesn't get passed to the linter
     # if this is a problem, remove it
+    debug = False
+    logging.basicConfig()
     try:
         debug = sys.argv.index("--debug")
         sys.argv.pop(debug)
-        logging.basicConfig()
         log.setLevel(logging.DEBUG)
     except ValueError:
         pass
 
     config = read_config()
+    config["debug"] = debug
     diffs = read_diffs()
 
     log.debug("diffs: %s", list(diffs))
@@ -192,6 +206,7 @@ def main():
         ret = do_lint(config, linter, diffs, list(files))
         if ret.linted > 0:
             exitcode = ret.returncode or 1
+        print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
 
     if exitcode != 0:
         sys.exit(exitcode)
