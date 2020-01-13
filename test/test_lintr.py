@@ -1,12 +1,15 @@
 """Tests for lint_diffs."""
 
+# pylint: disable=missing-docstring
+# flake8: noqa=D103
+
 import sys
 import io
 import logging
 
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
-from lint_diffs import main, read_diffs, read_config, parse_output
+from lint_diffs import main, read_diffs, read_config, _config_to_dict, parse_output
 
 
 log = logging.getLogger("lint_diffs")
@@ -22,6 +25,27 @@ index 81e7297..dcdbd1f 100644
 +    print(bar)
     """
 
+GOOD_DIFF_OUTPUT = """
+diff --git a/test/goodcode.py b/test/goodcode.py
+index 81e7297..dcdbd1f 100644
+--- a/test/goodcode.py
++++ b/test/goodcode.py
+@@ -2 +2 @@ def foo(baz):
+-    print(bar);
++    print(bar)
+    """
+
+NOT_LINT_TXT_DIFF = """
+diff --git a/test/some.txt b/test/some.txt
+index 81e7297..dcdbd1f 100644
+--- a/test/some.txt
++++ b/test/some.txt
+@@ -2 +2 @@ def foo(baz):
+-    print(bar);
++    print(bar)
+    """
+
+
 PYLINT_OUTPUT = """************* Module badcode
 test/badcode.py:1:0: C0111: Missing module docstring (missing-docstring)
 test/badcode.py:1:0: C0102: Black listed name "foo" (blacklisted-name)
@@ -36,7 +60,6 @@ Your code has been rated at -40.00/10 (previous run: -40.00/10, +0.00)"""
 
 
 def test_parse_out():
-    """Test output parser."""
     class Ret:  # pylint: disable=all
         stdout = PYLINT_OUTPUT
         returncode = 0
@@ -49,7 +72,6 @@ def test_parse_out():
 
 
 def test_diff_read():
-    """Read diffs from stdin test."""
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)):
         dlines = read_diffs()
         assert "test/badcode.py" in dlines
@@ -57,7 +79,6 @@ def test_diff_read():
 
 
 def test_conf_read():
-    """User config test."""
     with NamedTemporaryFile() as conf:
         conf.write(b"""
 [main]
@@ -72,11 +93,10 @@ always_report=W0613
             assert conf["pylint"]["always_report"] == 'W0613'
             assert conf["pylint"]["command"]
             assert conf["pylint"]["regex"]
-            assert conf["debug"]
+            assert conf["main"]["debug"]
 
 
 def test_conf_invalid(caplog):
-    """User config test invalid confs."""
     with NamedTemporaryFile() as conf:
         conf.write(b"""
 [invalid_config]
@@ -89,25 +109,29 @@ command=yo
 regex=(?P<file>[^:]+):(?P<line>\\d+):[^:]+: (?P<err>[^ :]+)
 """)
         conf.flush()
+
+        caplog.clear()
         with patch("lint_diffs.USER_CONFIG", conf.name):
             cfg = read_config()
+        exts = _config_to_dict(cfg)
+
         errs = 0
         for ent in caplog.records:
             if ent.levelname == "ERROR":
                 errs += 1
 
         # invalid extensions don't get loaded
-        assert '.wack' not in cfg
+        assert '.wack' not in exts
 
         # ext with weird whitespace still works
-        assert '.weird' in cfg
+        assert '.weird' in exts
 
         # missing command + missing regex == 2
         assert errs == 2
 
 
 def test_noconf(capsys):
-    """Test with no conf."""
+    logging.getLogger().setLevel(logging.INFO)
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), \
             NamedTemporaryFile() as conf:
         conf.write(b"""
@@ -127,7 +151,7 @@ def test_noconf(capsys):
 
 
 def test_always_report(capsys):
-    """Basic main test."""
+    logging.getLogger().setLevel(logging.INFO)
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), \
             NamedTemporaryFile() as conf:
         conf.write(b"""
@@ -154,7 +178,8 @@ always_report=W0613
 
 
 def test_noline_noerr(capsys):
-    """One bad code line, but not in diff."""
+    logging.getLogger().setLevel(logging.INFO)
+    # One bad code line, but not in diff
     pylint_output = """************* Module badcode
 test/badcode.py:1:10: E0602: Undefined variable 'bar' (undefined-variable)
 
@@ -170,6 +195,7 @@ Your code has been rated at -40.00/10 (previous run: -40.00/10, +0.00)"""
 
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)):
         with patch("subprocess.run", Ret):
+            sys.argv = ["whatever"]
             main()
 
             cap = capsys.readouterr()
@@ -177,9 +203,24 @@ Your code has been rated at -40.00/10 (previous run: -40.00/10, +0.00)"""
             assert "test/badcode.py" not in cap.out
 
 
-def test_debug_mode(caplog):
-    """Basic main test."""
-    with patch.object(sys, "stdin", io.StringIO("")):
-        sys.argv = ["whatever", "test/goodcode.py", "--debug"]
+def test_nolint_txt(caplog):
+    with patch.object(sys, "stdin", io.StringIO(NOT_LINT_TXT_DIFF)):
+        sys.argv = ["whatever", "--debug"]
         main()
-        assert "DEBUG" in caplog.text
+
+        assert "no files need linting" in caplog.text
+
+
+def test_debug_mode(caplog):
+    sys.argv = ["whatever", "--debug"]
+    with patch.object(sys, "stdin", io.StringIO(GOOD_DIFF_OUTPUT)):
+        main()
+    assert "DEBUG" in caplog.text
+
+
+def test_custom_opts(caplog):
+    sys.argv = ["whatever", "--debug", "-o", "txt:extensions=.txt", "-o", "txt:command=echo hi", "-o", r"txt:regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)"]
+    with patch.object(sys, "stdin", io.StringIO(NOT_LINT_TXT_DIFF)):
+        main()
+    assert "echo" in caplog.text
+

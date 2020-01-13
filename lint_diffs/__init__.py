@@ -13,6 +13,7 @@ import re
 import os
 import configparser
 import logging
+import argparse
 
 from typing import NamedTuple
 from unidiff import PatchSet
@@ -20,7 +21,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 USER_CONFIG = "~/.config/lint-diffs"
 
 
@@ -41,7 +42,7 @@ class LintResult(NamedTuple):
         return self.always + self.mine     # pylint: disable=no-member
 
 
-def read_config():
+def read_config() -> configparser.ConfigParser:
     """Read the default config, then read the user config."""
     config = configparser.ConfigParser()
 
@@ -53,13 +54,21 @@ def read_config():
         ]
     )
 
+    if "main" not in config:
+        config.add_section("main")
+
+    return config
+
+
+def _config_to_dict(config) -> dict:
+    """Convert dict to internal dictionary."""
     final = {}
     for secname, sec in config.items():
         final[secname] = sec
 
         ext = sec.get("extensions")
         if not ext:
-            log.debug("Ignoring section with no file extensions")
+            log.debug("Ignoring %s section with no file extensions", secname)
             continue
         cmd = sec.get("command")
         regex = sec.get("regex", "")
@@ -166,6 +175,33 @@ def parse_output(config, diffs, ret, regex, always_report):
     return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt, mine=mine_cnt, always=always_cnt, other=other_cnt)
 
 
+def _alter_config_with_args(args, config):
+    # command line opts pushed into config here
+    if args.debug is not None:
+        config["main"]["debug"] = "True"
+
+    if "debug" not in config["main"]:
+        config["main"]["debug"] = ""
+
+    for opt in args.option:
+        name, opt = opt.split(":", 1)
+        opt, val = opt.split("=", 1)
+        if name not in config:
+            config.add_section(name)
+        config[name][opt] = val
+
+
+def _parse_args():
+    parser = argparse.ArgumentParser(
+        description='Use unified diff from stdin to guide linting.',
+        epilog="See https://github.com/AtakamaLLC/lint-diffs for configuration examples.")
+    parser.add_argument("--debug", action="store_true", help="Debug regex parsing and lint-diff config", default=None)
+    parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint_diffs)", default="~/.config/lint_diffs")
+    parser.add_argument("--option", "-o", action="append", help="Pass option to underlying linter (name:opt=value)", default=[])
+    args = parser.parse_args()
+    return args
+
+
 def main():
     """Command line for lint-diffs.
 
@@ -176,18 +212,19 @@ def main():
     # most stuff should be in the config, but we allow a special "--debug"
     # flag that doesn't get passed to the linter
     # if this is a problem, remove it
-    debug = False
     logging.basicConfig()
-    try:
-        debug = sys.argv.index("--debug")
-        sys.argv.pop(debug)
-        log.setLevel(logging.DEBUG)
-    except ValueError:
-        pass
 
-    config = read_config()
-    if debug:
-        config["debug"] = True
+    args = _parse_args()
+
+    py_config = read_config()
+
+    _alter_config_with_args(args, py_config)
+
+    config = _config_to_dict(py_config)
+
+    if config["debug"]:
+        log.setLevel(logging.DEBUG)
+
     diffs = read_diffs()
 
     log.debug("diffs: %s", list(diffs))
