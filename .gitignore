@@ -1,6 +1,8 @@
 .coverage
+*,cover
 *.swp
 .mypy_cache
 __pycache__
 env/
 dist/
+node_modules
