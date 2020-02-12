@@ -16,12 +16,12 @@ jobs:
       script:
         - make lint
     - stage: deploy
+      only:
+        - master
       python: 
         - '3.6'
       script: 
         - flit publish
-      only:
-        - master
 
 after_success:
     - codecov --env TRAVIS_OS_NAME || ( sleep 5 && codecov --env TRAVIS_OS_NAME )
