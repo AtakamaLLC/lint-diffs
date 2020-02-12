@@ -51,6 +51,7 @@ def read_config() -> configparser.ConfigParser:
             os.path.join(os.path.dirname(__file__), 'default_config'),
             os.path.expanduser(USER_CONFIG),
             ".lint_diffs",
+            ".lint-diffs",
         ]
     )
 
@@ -126,8 +127,19 @@ def do_lint(config, linter, diffs, files):
     log.debug("linter: %s %s %s", cmd, regex, always_report)
 
     cmd = cmd.split(" ")
+    placeholder_found = False
+    joined = []
+    for elem in cmd:
+        if elem == '"$@"':
+            joined += files
+            placeholder_found = True
+        else:
+            joined.append(elem)
 
-    ret = subprocess.run(cmd + sys.argv[1:] + files, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8", check=False)
+    if not placeholder_found:
+        joined += files
+
+    ret = subprocess.run(joined, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8", check=False)
 
     return parse_output(config, diffs, ret, regex, always_report)
 
