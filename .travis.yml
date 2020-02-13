@@ -16,7 +16,7 @@ jobs:
       script:
         - make lint
     - stage: deploy
-      if: branch = master
+      if: branch = master AND type = push
       python: 
         - '3.6'
       script: 
