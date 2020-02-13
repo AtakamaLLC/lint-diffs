@@ -22,3 +22,8 @@ always_report=Error
 command=shellcheck -f gcc
 regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
 always_report=error:
+
+[clang-tidy]
+command=clang-tidy -checks="*" "$@" -- -std=c++17
+regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^:]+)
+always_report=error
