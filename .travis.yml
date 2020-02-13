@@ -16,8 +16,7 @@ jobs:
       script:
         - make lint
     - stage: deploy
-      only:
-        - master
+      if: branch = master
       python: 
         - '3.6'
       script: 

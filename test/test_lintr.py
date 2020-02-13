@@ -58,6 +58,32 @@ test/badcode.py:XX:ZZ: FFF: Bad lineno is allowed, but only reported if code mat
 ----------------------------------------------------------------------
 Your code has been rated at -40.00/10 (previous run: -40.00/10, +0.00)"""
 
+DIFF_CPP = """
+diff --git a/src/vsss.cpp b/src/vsss.cpp
+index 81e7297..dcdbd1f 100644
+--- a/src/vsss.cpp
++++ b/src/vsss.cpp
+@@ -6 +6 @@ void foo(int baz):
+-    print(bar)
++    print(bar);
+    """
+
+
+CLANG_OUTPUT = """
+32069 warnings generated.
+src/vsss.cpp:725:18: note: the definition seen here
+bool Vida::Kata::vsss_verify(const std::string & share_json) {
+                 ^
+src/vsss.cpp:6:1: warning: #includes are not sorted properly [llvm-include-order]
+#include "json.hpp"
+^        ~~~~~~~~~~
+         "bignum.hpp"
+src/vsss.cpp:31:24: warning: pass by value and use std::move [modernize-pass-by-value]
+vsss_share::vsss_share(Bignum _index, Bignum _data, int _m, int _n, const ECPtr &_gen, const ECPtr &_gen_k,
+                       ^
+src/vsss.cpp:31:88: warning: pass by value and use std::move [modernize-pass-by-value]
+"""
+
 
 def test_parse_out():
     class Ret:  # pylint: disable=all
@@ -223,4 +249,17 @@ def test_custom_opts(caplog):
     with patch.object(sys, "stdin", io.StringIO(NOT_LINT_TXT_DIFF)):
         main()
     assert "echo" in caplog.text
+
+def test_clang():
+    sys.argv = ["whatever", "-o", "clang-tidy:extensions=.cpp .hpp"]
+
+    class Ret:  # pylint: disable=all
+        stdout = CLANG_OUTPUT
+        returncode = 1
+        def __init__(self, *a, **k):
+            pass
+
+    with patch.object(sys, "stdin", io.StringIO(DIFF_CPP)), patch("subprocess.run", Ret), patch("sys.exit") as exited:
+        main()
+        exited.assert_called_once_with(1)
 
