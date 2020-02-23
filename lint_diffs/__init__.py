@@ -14,6 +14,7 @@ import os
 import configparser
 import logging
 import argparse
+import multiprocessing.dummy
 
 from typing import NamedTuple
 from unidiff import PatchSet
@@ -21,7 +22,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.13"
+__version__ = "0.1.14"
 USER_CONFIG = "~/.config/lint-diffs"
 
 
@@ -93,6 +94,12 @@ def _config_to_dict(config) -> dict:
 
     if "main" in final:
         for key, val in final["main"].items():
+            if key in ("parallel",):
+                val = int(val)
+
+            if key in ("debug",):
+                val = bool(val)
+
             final[key] = val
 
     return final
@@ -192,6 +199,9 @@ def _alter_config_with_args(args, config):
     if args.debug is not None:
         config["main"]["debug"] = "True"
 
+    if args.parallel is not None:
+        config["main"]["parallel"] = str(args.parallel)
+
     if "debug" not in config["main"]:
         config["main"]["debug"] = ""
 
@@ -208,7 +218,8 @@ def _parse_args():
         description='Use unified diff from stdin to guide linting.',
         epilog="See https://github.com/AtakamaLLC/lint-diffs for configuration examples.")
     parser.add_argument("--debug", action="store_true", help="Debug regex parsing and lint-diff config", default=None)
-    parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint_diffs)", default="~/.config/lint_diffs")
+    parser.add_argument("--parallel", action="store", type=int, help="Number of parallel jobs.", default="1")
+    parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint-diffs)", default="~/.config/lint-diffs")
     parser.add_argument("--option", "-o", action="append", help="Pass option to underlying linter (name:opt=value)", default=[])
     args = parser.parse_args()
     return args
@@ -256,12 +267,21 @@ def main():
 
     log.debug("linters: %s", linters)
 
-    exitcode = 0
-    for linter, files in linters.items():
+    def print_lint(item):
+        linter, files = item
         ret = do_lint(config, linter, diffs, list(files))
-        if ret.linted > 0:
-            exitcode = ret.returncode or 1
         print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
+        return ret.linted > 0 and (ret.returncode or 1)
+
+    parallel = config["parallel"]
+
+    if parallel > 1:
+        pool = multiprocessing.dummy.Pool(parallel)
+        mapper = pool.map
+    else:
+        mapper = map
+
+    exitcode = max(mapper(print_lint, linters.items()))
 
     if exitcode != 0:
         sys.exit(exitcode)

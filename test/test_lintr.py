@@ -263,3 +263,12 @@ def test_clang():
         main()
         exited.assert_called_once_with(1)
 
+def test_parallel(capsys):
+    sys.argv = ["whatever", "--parallel", "2", "-o", "flake8:extensions=.py"]
+
+    with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), patch("sys.exit") as exited:
+        main()
+
+    cap = capsys.readouterr()
+    assert 'E0602' in cap.out       # pylint
+    assert 'F821' in cap.out        # flake8
