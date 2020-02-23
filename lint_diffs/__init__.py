@@ -9,12 +9,14 @@ Exports:
 
 import sys
 import subprocess
+import io
 import re
 import os
 import configparser
 import logging
 import argparse
 import multiprocessing.dummy
+from threading import Lock
 
 from typing import NamedTuple
 from unidiff import PatchSet
@@ -24,6 +26,7 @@ log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
 __version__ = "0.1.14"
 USER_CONFIG = "~/.config/lint-diffs"
+CONSOLE_LOCK = Lock()
 
 
 class LintResult(NamedTuple):
@@ -35,6 +38,7 @@ class LintResult(NamedTuple):
     total: int              # total lines in output
     other: int              # lint errs not in my lines
     returncode: int         # err code
+    output: str             # one line per error
 
     @property
     def linted(self):
@@ -148,23 +152,24 @@ def do_lint(config, linter, diffs, files):
 
     ret = subprocess.run(joined, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8", check=False)
 
-    return parse_output(config, diffs, ret, regex, always_report)
+    return parse_output(diffs, ret, regex, always_report)
 
 
-def parse_output(config, diffs, ret, regex, always_report):
+def parse_output(diffs, ret, regex, always_report):
     """Parse linter output."""
     skipped_cnt = 0
     total_cnt = 0
     always_cnt = 0
     mine_cnt = 0
     other_cnt = 0
+    outf = io.StringIO()
+
     for line in ret.stdout.split("\n"):
         total_cnt += 1
         match = re.match(regex, line)
         if not match:
             skipped_cnt += 1
-            if config.get("debug"):
-                print("#", line)
+            print("#", line, file=outf)
             continue
 
         fname, lno, err = match["file"], match["line"], match["err"]
@@ -189,9 +194,10 @@ def parse_output(config, diffs, ret, regex, always_report):
         else:
             mine_cnt += 1
 
-        print(line)
+        print(line, file=outf)
 
-    return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt, mine=mine_cnt, always=always_cnt, other=other_cnt)
+    return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt,
+                      mine=mine_cnt, always=always_cnt, other=other_cnt, output=outf.getvalue())
 
 
 def _alter_config_with_args(args, config):
@@ -268,12 +274,15 @@ def main():
     log.debug("linters: %s", linters)
 
     def print_lint(item):
+        """Run linter, print output to screen."""
         linter, files = item
         ret = do_lint(config, linter, diffs, list(files))
-        print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
+        with CONSOLE_LOCK:
+            print(ret.output)
+            print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
         return ret.linted > 0 and (ret.returncode or 1)
 
-    parallel = config["parallel"]
+    parallel = config.get("parallel", 1)
 
     if parallel > 1:
         pool = multiprocessing.dummy.Pool(parallel)

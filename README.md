@@ -15,7 +15,10 @@ First you need some diffs, then you pipe it to lint-diffs:
 
 ... or in mercurial: `hg outgoing -p | lint-diffs`
 
-The default and only preconfigured tool for python is "pylint".
+-   default linter configuration is on for pylint (.py), rubocop (.rb), and 
+    clang (.cpp, .hpp)
+
+-   flake8, eslint and other linters need to be enabled (see below) explicitly.
 
 Configuration:
 
@@ -48,15 +51,15 @@ not just changed lines.
 
 To add new linters:
 
-- The linter has to report to stdout
-- The linter has to have a regex that produces a full file path, a line number
-  and an error class
-- The line numbers and file paths have to match diff target file paths
+-   The linter has to report to stdout
+-   The linter has to have a regex that produces a full file path, a line number
+    and an error class
+-   The line numbers and file paths have to match diff target file paths
 
 To enable or disable linters change the 'extensions' config.
 
 Goals:
 
-- Runs with good defaults for many people
-- Should be easy to modify the config for any linter
-- Should be easy to use with any vcs
+-   Runs with good defaults for many people
+-   Should be easy to modify the config for any linter
+-   Should be easy to use with any vcs

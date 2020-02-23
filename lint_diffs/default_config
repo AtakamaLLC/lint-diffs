@@ -9,6 +9,7 @@ command=flake8
 regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
 
 [rubocop]
+extensions=.rb
 command=rubocop app spec
 regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>.: [^:]+)
 always_report=E
@@ -19,11 +20,13 @@ regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
 always_report=Error
 
 [shellcheck]
+extensions=.sh
 command=shellcheck -f gcc
 regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
 always_report=error:
 
 [clang-tidy]
+extensions=.cpp .hpp
 command=clang-tidy -checks="*" "$@" -- -std=c++17
 regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^:]+)
 always_report=error
