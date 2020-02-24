@@ -9,7 +9,10 @@ import logging
 
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
-from lint_diffs import main, read_diffs, read_config, _config_to_dict, parse_output
+
+import pytest
+
+from lint_diffs import main, read_diffs, read_config, _config_to_dict, _str_to_int_or_bool, parse_output
 
 
 log = logging.getLogger("lint_diffs")
@@ -84,6 +87,13 @@ vsss_share::vsss_share(Bignum _index, Bignum _data, int _m, int _n, const ECPtr 
 src/vsss.cpp:31:88: warning: pass by value and use std::move [modernize-pass-by-value]
 """
 
+
+def test_parse_arg_str():
+    assert _str_to_int_or_bool("true")
+    assert not _str_to_int_or_bool("false")
+    assert _str_to_int_or_bool("1") == 1
+    with pytest.raises(ValueError):
+        _str_to_int_or_bool("")
 
 def test_parse_out():
     class Ret:  # pylint: disable=all
@@ -274,3 +284,17 @@ def test_parallel(capsys):
     cap = capsys.readouterr()
     assert 'E0602' in cap.out       # pylint
     assert 'F821' in cap.out        # flake8
+
+def test_strict():
+    sys.argv = ["whatever", "--strict", "-o", "pylint:command=no-such-command"]
+
+    with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), patch("sys.exit") as exited:
+        main()
+        exited.assert_called_once_with(1)
+
+def test_not_strict():
+    sys.argv = ["whatever", "-o", "pylint:command=no-such-command"]
+
+    with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), patch("sys.exit") as exited:
+        main()
+        exited.assert_not_called()
