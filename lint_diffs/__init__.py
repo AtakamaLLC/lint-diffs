@@ -24,7 +24,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.16"
+__version__ = "0.1.17"
 USER_CONFIG = "~/.config/lint-diffs"
 CONSOLE_LOCK = Lock()
 NOTFOUND = -9
@@ -299,7 +299,6 @@ def main():
         with CONSOLE_LOCK:
             print(ret.output)
             print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
-        print("HERE!!!!!!!! %s", repr(ret))
         if ret.returncode == NOTFOUND:
             return 1 if strict else 0
         return ret.linted > 0 and (ret.returncode or 1)
