@@ -29,6 +29,7 @@ USER_CONFIG = "~/.config/lint-diffs"
 CONSOLE_LOCK = Lock()
 NOTFOUND = -9
 
+
 class LintResult(NamedTuple):
     """Summary results from running diff-lint."""
 
