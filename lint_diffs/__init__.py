@@ -183,7 +183,7 @@ def parse_output(diffs, ret, regex, always_report):
 
         fname, lno, err = match["file"], match["line"], match["err"]
         fname = fname.translate(str.maketrans("\\", "/"))
-        
+
         try:
             lno = int(lno)
         except ValueError:
