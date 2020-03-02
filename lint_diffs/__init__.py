@@ -119,8 +119,8 @@ def read_diffs():
     patch_set = PatchSet(sys.stdin)
     diff_lines = {}
     for patch in patch_set:
+        lnos = set()
         for hunk in patch:
-            lnos = set()
             for line_info in hunk.target_lines():
                 lnos.add(line_info.target_line_no)
         diff_lines[patch.path] = lnos
@@ -182,6 +182,7 @@ def parse_output(diffs, ret, regex, always_report):
             continue
 
         fname, lno, err = match["file"], match["line"], match["err"]
+        fname = fname.translate(str.maketrans("\\", "/"))
 
         try:
             lno = int(lno)
