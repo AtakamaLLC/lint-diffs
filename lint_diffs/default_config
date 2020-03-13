@@ -27,6 +27,6 @@ always_report=error:
 
 [clang-tidy]
 extensions=.cpp .hpp
-command=clang-tidy -checks="*" "$@" -- -std=c++17
+command=clang-tidy -checks="*"
 regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^:]+)
 always_report=error
