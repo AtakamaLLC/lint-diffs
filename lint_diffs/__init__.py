@@ -161,10 +161,10 @@ def do_lint(config, linter, diffs, files):
         return LintResult(returncode=NOTFOUND, skipped=0, total=0,
                           mine=0, always=0, other=0, output="Command not found for '%s'\n" % linter)
 
-    return parse_output(diffs, ret, regex, always_report)
+    return parse_output(config, diffs, ret, regex, always_report)
 
 
-def parse_output(diffs, ret, regex, always_report):
+def parse_output(config, diffs, ret, regex, always_report):
     """Parse linter output."""
     skipped_cnt = 0
     total_cnt = 0
