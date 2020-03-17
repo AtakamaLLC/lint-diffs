@@ -172,13 +172,15 @@ def parse_output(diffs, ret, regex, always_report):
     mine_cnt = 0
     other_cnt = 0
     outf = io.StringIO()
+    prev_m = False
 
     for line in ret.stdout.split("\n"):
         total_cnt += 1
         match = re.match(regex, line)
         if not match:
             skipped_cnt += 1
-            print("#", line, file=outf)
+            if prev_m or config.get("debug"):
+                print("#", line, file=outf)
             continue
 
         fname, lno, err = match["file"], match["line"], match["err"]
@@ -189,6 +191,7 @@ def parse_output(diffs, ret, regex, always_report):
         except ValueError:
             log.debug("lineno parse issue: %s", line)
 
+        prev_m = False
         always_match = False
 
         if always_report:
@@ -204,6 +207,7 @@ def parse_output(diffs, ret, regex, always_report):
         else:
             mine_cnt += 1
 
+        prev_m = True
         print(line, file=outf)
 
     return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt,
