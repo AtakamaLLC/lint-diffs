@@ -24,7 +24,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.19"
+__version__ = "0.1.20"
 USER_CONFIG = "~/.config/lint-diffs"
 CONSOLE_LOCK = Lock()
 NOTFOUND = -9
@@ -161,10 +161,10 @@ def do_lint(config, linter, diffs, files):
         return LintResult(returncode=NOTFOUND, skipped=0, total=0,
                           mine=0, always=0, other=0, output="Command not found for '%s'\n" % linter)
 
-    return parse_output(diffs, ret, regex, always_report)
+    return parse_output(config, diffs, ret, regex, always_report)
 
 
-def parse_output(diffs, ret, regex, always_report):
+def parse_output(config, diffs, ret, regex, always_report):
     """Parse linter output."""
     skipped_cnt = 0
     total_cnt = 0
@@ -172,13 +172,15 @@ def parse_output(diffs, ret, regex, always_report):
     mine_cnt = 0
     other_cnt = 0
     outf = io.StringIO()
+    prev_m = False
 
     for line in ret.stdout.split("\n"):
         total_cnt += 1
         match = re.match(regex, line)
         if not match:
             skipped_cnt += 1
-            print("#", line, file=outf)
+            if prev_m or config.get("debug"):
+                print("#", line, file=outf)
             continue
 
         fname, lno, err = match["file"], match["line"], match["err"]
@@ -189,6 +191,7 @@ def parse_output(diffs, ret, regex, always_report):
         except ValueError:
             log.debug("lineno parse issue: %s", line)
 
+        prev_m = False
         always_match = False
 
         if always_report:
@@ -204,6 +207,7 @@ def parse_output(diffs, ret, regex, always_report):
         else:
             mine_cnt += 1
 
+        prev_m = True
         print(line, file=outf)
 
     return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt,
