@@ -63,3 +63,16 @@ Goals:
 -   Runs with good defaults for many people
 -   Should be easy to modify the config for any linter
 -   Should be easy to use with any vcs
+
+## Running in Bare mode
+
+In case you intend to integrate this with some other tool or IDE, you might
+wish to get only the output for one single linter to the console. In that case
+you can use the **--bare** command line option passing a linter name to obtain
+an output like this:
+
+```console
+$ git diff -U0 origin/master | lint-diffs --bare flake8
+lint_diffs/__init__.py:194:54: W291 trailing whitespace
+lint_diffs/__init__.py:334:68: W291 trailing whitespace
+```
