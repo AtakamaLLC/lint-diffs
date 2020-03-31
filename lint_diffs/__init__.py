@@ -16,6 +16,7 @@ import configparser
 import logging
 import argparse
 import multiprocessing.dummy
+from collections import defaultdict
 from threading import Lock
 
 from typing import NamedTuple
@@ -217,13 +218,21 @@ def parse_output(config, diffs, ret, regex, always_report):
 def _alter_config_with_args(args, config):
     # command line opts pushed into config here (maybe need schema?)
     if args.debug is not None:
+        log.debug("DEBUG set from command line")
         config["main"]["debug"] = "1"
 
     if args.parallel is not None:
-        config["main"]["parallel"] = str(args.parallel)
+        value = str(args.parallel)
+        log.debug("PARALLEL set from command line to %r", value)
+        config["main"]["parallel"] = value
 
     if args.strict is not None:
+        log.debug("STRICT set from command line")
         config["main"]["strict"] = "1"
+
+    if args.bare is not None:
+        log.debug("BARE set from command line to %r", args.bare)
+        config["main"]["bare"] = args.bare
 
     if "debug" not in config["main"]:
         config["main"]["debug"] = "0"
@@ -247,6 +256,7 @@ def _parse_args():
     parser.add_argument("--parallel", action="store", type=int, help="Number of parallel jobs.", default="1")
     parser.add_argument("--strict", action="store_true", help="Fail if linter not installed.", default=None)
     parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint-diffs)", default="~/.config/lint-diffs")
+    parser.add_argument("--bare", "-b", action="store", help="Run only one linter with script-friendly output", default=None)
     parser.add_argument("--option", "-o", action="append", help="Pass option to underlying linter (name:opt=value)", default=[])
     args = parser.parse_args()
     return args
@@ -279,13 +289,11 @@ def main():
 
     log.debug("diffs: %s", list(diffs))
 
-    linters = {}
+    linters = defaultdict(set)
     for fname in diffs:
         _, ext = os.path.splitext(fname)
         if ext in config:
             for linter_name in config[ext]:
-                if linter_name not in linters:
-                    linters[linter_name] = set()
                 linters[linter_name].add(fname)
 
     if not linters:
@@ -294,6 +302,7 @@ def main():
 
     strict = config.get("strict", False)
     parallel = config.get("parallel", 1)
+    bare = config.get("bare", None)
 
     log.debug("linters: %s, strict: %s, parallel: %s", linters, strict, parallel)
 
