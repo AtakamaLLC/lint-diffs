@@ -24,7 +24,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.20"
+__version__ = "0.1.21"
 USER_CONFIG = "~/.config/lint-diffs"
 CONSOLE_LOCK = Lock()
 NOTFOUND = -9
@@ -264,7 +264,11 @@ def main():
     # if this is a problem, remove it
     logging.basicConfig()
 
+    # Read command line arguments and turn on DEBUG logging if asked for so
+    # we can check for debugging information while parsing configuration files
     args = _parse_args()
+    if args.debug:
+        log.setLevel(logging.DEBUG)
 
     py_config = read_config()
 
