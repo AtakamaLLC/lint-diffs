@@ -139,6 +139,7 @@ def do_lint(config, linter, diffs, files):
     cmd = config[linter]["command"]
     always_report = config[linter].get("always_report")
     regex = config[linter]["regex"]
+    output_file = config[linter].get("output_file")
 
     log.debug("linter: %s %s %s", cmd, regex, always_report)
 
@@ -157,6 +158,9 @@ def do_lint(config, linter, diffs, files):
 
     try:
         ret = subprocess.run(joined, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8", check=False)
+        if output_file:
+            with f as file.open(output_file, 'w'):
+                f.write(ret.stdout)
     except FileNotFoundError:
         return LintResult(returncode=NOTFOUND, skipped=0, total=0,
                           mine=0, always=0, other=0, output="Command not found for '%s'\n" % linter)
