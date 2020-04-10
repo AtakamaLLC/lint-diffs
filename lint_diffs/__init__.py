@@ -159,7 +159,7 @@ def do_lint(config, linter, diffs, files):
     try:
         ret = subprocess.run(joined, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8", check=False)
         if output_file:
-            with f as open(output_file, 'w'):
+            with open(output_file, 'w') as f:
                 f.write(ret.stdout)
     except FileNotFoundError:
         return LintResult(returncode=NOTFOUND, skipped=0, total=0,
