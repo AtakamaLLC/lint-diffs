@@ -198,7 +198,8 @@ def test_output_file():
 debug=True
 
 [pylint]
-output_file=outtest.lint
+always_report=W0613
+output_file=./outtest.lint
         """)
         conf.flush()
         sys.argv = ["whatever"]
@@ -208,10 +209,10 @@ output_file=outtest.lint
             except SystemExit as ex:
                 assert ex.code != 0
             
-        assert path.isfile('outtest.lint')
-        with open('outtest.lint') as outfile:
+        assert path.isfile('./outtest.lint')
+        with open('./outtest.lint') as outfile:
             content = outfile.read()
-            assert 'E0602' in content
+            assert 'W0613' in content
 
 def test_always_report(capsys):
     logging.getLogger().setLevel(logging.INFO)
