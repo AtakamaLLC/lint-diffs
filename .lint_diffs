@@ -4,4 +4,3 @@ extensions=.py
 [pylint]
 always_report=E.*
 regex=(?P<file>[^:]+):(?P<line>\d+) \[(?P<err>[^\]]+)
-output_file=report.pylint
