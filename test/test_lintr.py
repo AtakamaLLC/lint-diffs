@@ -6,6 +6,7 @@
 import sys
 import io
 import logging
+from os import path
 
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
@@ -187,6 +188,30 @@ def test_noconf(capsys):
             assert 'W0613' not in cap.out
             assert 'E0602' in cap.out
 
+
+def test_output_file():
+    logging.getLogger().setLevel(logging.INFO)
+    with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), \
+            NamedTemporaryFile() as conf:
+        conf.write(b"""
+[main]
+debug=True
+
+[pylint]
+output_file=outtest.lint
+        """)
+        conf.flush()
+        sys.argv = ["whatever"]
+        with patch("lint_diffs.USER_CONFIG", conf.name):
+            try:
+                main()
+            except SystemExit as ex:
+                assert ex.code != 0
+            
+        assert path.isfile('outtest.lint')
+        with open('outtest.lint') as outfile:
+            content = outfile.read()
+            assert 'E0602' in content
 
 def test_always_report(capsys):
     logging.getLogger().setLevel(logging.INFO)
