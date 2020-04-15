@@ -1,7 +1,6 @@
 [pylint]
 extensions=.py
 command=pylint
-# this is the default.  if you have a custom .pylintrc, you'll need to change it
 regex=(?P<file>[^:]+):(?P<line>\d+):[^:]+: (?P<err>[^ :]+)
 
 [flake8]
