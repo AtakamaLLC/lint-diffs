@@ -264,6 +264,32 @@ def _parse_args():
     return args
 
 
+def _get_linters(config, diffs):
+    """Returns a linters dictionary with names as key.
+
+    Linters dictionary will contain linter names as key and a set of filenames
+    for each of them. That will allow us to determine which linters should
+    run agains which filenames.
+
+    :param config: post-processed config dictionary
+    :param diffs: result of calling `read_diffs`
+    :return: linters dictionary
+
+    """
+    linters = defaultdict(set)
+    for fname in diffs:
+        _, ext = os.path.splitext(fname)
+        for linter_name in config.get(ext, []):
+            linters[linter_name].add(fname)
+    bare = config.get("bare", None)
+    if bare is None:
+        return linters
+    log.debug('Going bare mode with %r', bare)
+    if bare not in linters:
+        return {}
+    return {bare: linters.get(bare)}
+
+
 def main():
     """Command line for lint-diffs.
 
@@ -298,12 +324,8 @@ def main():
     diffs = read_diffs()
     log.debug("diffs: %s", list(diffs))
 
-    linters = defaultdict(set)
-    for fname in diffs:
-        _, ext = os.path.splitext(fname)
-        if ext in config:
-            for linter_name in config[ext]:
-                linters[linter_name].add(fname)
+    # Get filenames to be ran for each key-d linter name
+    linters = _get_linters(config, diffs)
     log.debug("linters: %s, strict: %s, parallel: %s", linters, strict, parallel)
 
     #
@@ -328,21 +350,16 @@ def main():
             return 1 if strict else 0
         return ret.linted > 0 and (ret.returncode or 1)
 
-    # Normal non-bare execution will run all linters we know about,
-    # optionally in parallel according current configuration
-    if bare is None:
-        if parallel > 1:
-            log.debug("Going parallel mode with %r", parallel)
-            pool = multiprocessing.dummy.Pool(parallel)
-            mapper = pool.map
-        else:
-            log.debug("Going ordinary model")
-            mapper = map
-        exitcode = max(mapper(print_lint, linters.items()))
+    # By this moment, if we are running in bare mode, we will get only the
+    # bare linter in linters dictionary.
+    if parallel > 1:
+        log.debug("Going parallel mode with %r", parallel)
+        pool = multiprocessing.dummy.Pool(parallel)
+        mapper = pool.map
     else:
-        log.debug('Going bare mode with %r', bare)
-        item = (bare, linters[bare])
-        exitcode = print_lint(item)
+        log.debug("Going ordinary mode")
+        mapper = map
+    exitcode = max(mapper(print_lint, linters.items()))
 
     if exitcode != 0:
         sys.exit(exitcode)
