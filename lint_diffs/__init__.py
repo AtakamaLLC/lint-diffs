@@ -24,7 +24,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.21"
+__version__ = "0.1.22"
 USER_CONFIG = "~/.config/lint-diffs"
 CONSOLE_LOCK = Lock()
 NOTFOUND = -9
