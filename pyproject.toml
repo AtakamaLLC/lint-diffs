@@ -14,7 +14,7 @@ classifiers=["Intended Audience :: Developers",
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires = ["unidiff"]
+requires = ["unidiff>=0.6.0"]
 requires-python = ">=3.6"
 
 [tool.flit.scripts]

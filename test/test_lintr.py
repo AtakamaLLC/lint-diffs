@@ -102,7 +102,7 @@ def test_parse_out():
 
     config = {}
     regex = r"(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>[^ :]+)"
-    ret = parse_output({"test/badcode.py": [2]}, Ret(), regex, "W0613")
+    ret = parse_output(config, {"test/badcode.py": [2]}, Ret(), regex, "W0613")
     assert ret.skipped == 4
     assert ret.linted == 2
     assert "W0613" in ret.output
