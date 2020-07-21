@@ -3,6 +3,6 @@ pytest>=4.4.0
 pytest-coverage==0.0.1
 pytest-xdist==1.33.0
 flake8==3.8.3
-unidiff
+unidiff==0.6.0
 flit
 codecov
