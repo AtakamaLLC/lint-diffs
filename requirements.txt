@@ -1,7 +1,7 @@
 pylint==2.5.3
 pytest>=4.4.0
 pytest-coverage==0.0.1
-pytest-xdist
+pytest-xdist==1.33.0
 flake8
 unidiff
 flit
