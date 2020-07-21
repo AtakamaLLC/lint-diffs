@@ -5,4 +5,4 @@ pytest-xdist==1.33.0
 flake8==3.8.3
 unidiff==0.6.0
 flit==2.3.0
-codecov
+codecov==2.1.8
