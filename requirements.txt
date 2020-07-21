@@ -1,6 +1,6 @@
 pylint==2.5.3
 pytest>=4.4.0
-pytest-coverage
+pytest-coverage==0.0.1
 pytest-xdist
 flake8
 unidiff
