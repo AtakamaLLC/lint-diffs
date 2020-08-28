@@ -60,6 +60,16 @@ not just changed lines.
 
 To enable or disable linters change the 'extensions' config.
 
+To get "clang-tidy" to work, add something like this to your lint script:
+
+```bash
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release -S . -B lint
+cp lint/compile_commands.json .
+```
+
+... that way clang-tidy will figure out all the includes needed to compile.
+
+Goals:
 ## Goals
 
 -   Runs with good defaults for many people
