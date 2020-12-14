@@ -49,6 +49,14 @@ Additionally, ruby, eslint and shell script linters have been enabled.   The
 ruby linter has been modified to always report warnings, on any changed file,
 not just changed lines.
 
+Config files are merged using python's ConfigParser system.   Therefore, to disable pylint 
+you will need to add this config:
+
+```
+[pylint]
+extensions=
+```
+
 ## To add new linters
 
 -   The linter has to report to stdout
