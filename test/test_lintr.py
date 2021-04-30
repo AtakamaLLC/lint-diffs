@@ -8,7 +8,7 @@ import io
 import logging
 
 from tempfile import NamedTemporaryFile
-from unittest.mock import patch
+from unittest.mock import patch,  Mock
 
 import pytest
 
@@ -126,12 +126,12 @@ debug=True
 always_report=W0613
         """)
         conf.flush()
-        with patch("lint_diffs.USER_CONFIG", conf.name):
-            conf = read_config()
-            assert conf["pylint"]["always_report"] == 'W0613'
-            assert conf["pylint"]["command"]
-            assert conf["pylint"]["regex"]
-            assert conf["main"]["debug"]
+        args = Mock(config=conf.name)
+        conf = read_config(args)
+        assert conf["pylint"]["always_report"] == 'W0613'
+        assert conf["pylint"]["command"]
+        assert conf["pylint"]["regex"]
+        assert conf["main"]["debug"]
 
 
 def test_conf_invalid(caplog):
@@ -149,8 +149,8 @@ regex=(?P<file>[^:]+):(?P<line>\\d+):[^:]+: (?P<err>[^ :]+)
         conf.flush()
 
         caplog.clear()
-        with patch("lint_diffs.USER_CONFIG", conf.name):
-            cfg = read_config()
+        args = Mock(config=conf.name)
+        cfg = read_config(args)
         exts = _config_to_dict(cfg)
 
         errs = 0
