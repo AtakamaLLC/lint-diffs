@@ -126,6 +126,7 @@ debug=True
 always_report=W0613
         """)
         conf.flush()
+        
         args = Mock(config=conf.name)
         conf = read_config(args)
         assert conf["pylint"]["always_report"] == 'W0613'
