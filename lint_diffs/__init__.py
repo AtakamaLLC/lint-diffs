@@ -25,7 +25,7 @@ from unidiff import PatchSet
 
 log = logging.getLogger("lint_diffs")
 __all__ = ["main"]
-__version__ = "0.1.21"
+__version__ = "0.1.22"
 USER_CONFIG = "~/.config/lint-diffs"
 CONSOLE_LOCK = Lock()
 NOTFOUND = -9
@@ -49,16 +49,15 @@ class LintResult(NamedTuple):
         return self.always + self.mine     # pylint: disable=no-member
 
 
-def read_config() -> configparser.ConfigParser:
+def read_config(args) -> configparser.ConfigParser:
     """Read the default config, then read the user config."""
     config = configparser.ConfigParser()
 
     config.read(
         [
             os.path.join(os.path.dirname(__file__), 'default_config'),
-            os.path.expanduser(USER_CONFIG),
+            os.path.expanduser(args.config),
             ".lint_diffs",
-            ".lint-diffs",
         ]
     )
 
@@ -257,7 +256,7 @@ def _parse_args():
     parser.add_argument("--debug", action="store_true", help="Debug regex parsing and lint-diff config", default=None)
     parser.add_argument("--parallel", action="store", type=int, help="Number of parallel jobs.", default="1")
     parser.add_argument("--strict", action="store_true", help="Fail if linter not installed.", default=None)
-    parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint-diffs)", default="~/.config/lint-diffs")
+    parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint-diffs)", default=USER_CONFIG)
     parser.add_argument("--bare", "-b", action="store", help="Run only one linter with script-friendly output", default=None)
     parser.add_argument("--option", "-o", action="append", help="Pass option to underlying linter (name:opt=value)", default=[])
     args = parser.parse_args()
@@ -309,7 +308,7 @@ def main():
         log.setLevel(logging.DEBUG)
 
     # Read config files and override them with command line arguments
-    py_config = read_config()
+    py_config = read_config(args)
     _alter_config_with_args(args, py_config)
 
     # Create actual config dictionary to be used ahead, saving some common

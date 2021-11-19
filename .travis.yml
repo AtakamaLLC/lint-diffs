@@ -26,4 +26,4 @@ after_success:
     - codecov --env TRAVIS_OS_NAME || ( sleep 5 && codecov --env TRAVIS_OS_NAME )
      
 install:
-- pip install -r requirements.txt
+- pip install -U -r requirements.txt

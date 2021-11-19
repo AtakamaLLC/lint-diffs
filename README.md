@@ -49,6 +49,14 @@ Additionally, ruby, eslint and shell script linters have been enabled.   The
 ruby linter has been modified to always report warnings, on any changed file,
 not just changed lines.
 
+Config files are merged using python's ConfigParser system.   Therefore, to disable pylint 
+you will need to add this config:
+
+```
+[pylint]
+extensions=
+```
+
 ## To add new linters
 
 -   The linter has to report to stdout
@@ -60,6 +68,16 @@ not just changed lines.
 
 To enable or disable linters change the 'extensions' config.
 
+To get "clang-tidy" to work, add something like this to your lint script:
+
+```bash
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release -S . -B lint
+cp lint/compile_commands.json .
+```
+
+... that way clang-tidy will figure out all the includes needed to compile.
+
+Goals:
 ## Goals
 
 -   Runs with good defaults for many people
