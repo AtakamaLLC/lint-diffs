@@ -1,8 +1,8 @@
-pylint==2.5.3
+pylint>=2.5.3
 pytest>=4.4.0
-pytest-coverage==0.0.1
-pytest-xdist==1.33.0
-flake8==3.8.3
-unidiff==0.6.0
-flit==2.3.0
-codecov==2.1.8
+pytest-cov>=3.0
+pytest-xdist>=1.33.0
+flake8>=3.8.3
+unidiff>=0.6.0
+flit>=2.3.0
+codecov>=2.1.8
