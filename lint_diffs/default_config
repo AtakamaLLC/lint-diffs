@@ -15,7 +15,7 @@ regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: (?P<err>.: [^:]+)
 always_report=E
 
 [eslint]
-command=eslint -f unix
+command=npx eslint -f unix
 regex=(?P<file>[^:]+):(?P<line>[^:]+):[^:]+: .*?\[(?P<err>[^\]]+)
 always_report=Error
 
