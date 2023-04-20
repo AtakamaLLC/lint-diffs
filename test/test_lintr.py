@@ -299,3 +299,12 @@ def test_not_strict():
     with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), patch("sys.exit") as exited:
         main()
         exited.assert_not_called()
+
+
+def test_bare(capsys):
+    sys.argv = ["whatever", "--bare", "pylint"]
+    with patch.object(sys, "stdin", io.StringIO(DIFF_OUTPUT)), patch("sys.exit") as exited:
+        main()
+    cap = capsys.readouterr()
+    lines = cap.out.split('\n')
+    assert len(lines) == 2, "Expected only bare output"

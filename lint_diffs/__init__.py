@@ -16,6 +16,7 @@ import configparser
 import logging
 import argparse
 import multiprocessing.dummy
+from collections import defaultdict
 from threading import Lock
 
 from typing import NamedTuple
@@ -173,12 +174,13 @@ def parse_output(config, diffs, ret, regex, always_report):
     outf = io.StringIO()
     prev_m = False
 
+    bare = config.get("bare")
     for line in ret.stdout.split("\n"):
         total_cnt += 1
         match = re.match(regex, line)
         if not match:
             skipped_cnt += 1
-            if prev_m or config.get("debug"):
+            if bare is None and (prev_m or config.get("debug")):
                 print("#", line, file=outf)
             continue
 
@@ -209,20 +211,29 @@ def parse_output(config, diffs, ret, regex, always_report):
         prev_m = True
         print(line, file=outf)
 
+    output = outf.getvalue().rstrip('\n')
     return LintResult(returncode=ret.returncode, skipped=skipped_cnt, total=total_cnt,
-                      mine=mine_cnt, always=always_cnt, other=other_cnt, output=outf.getvalue())
+                      mine=mine_cnt, always=always_cnt, other=other_cnt, output=output)
 
 
 def _alter_config_with_args(args, config):
     # command line opts pushed into config here (maybe need schema?)
     if args.debug is not None:
+        log.debug("DEBUG set from command line")
         config["main"]["debug"] = "1"
 
     if args.parallel is not None:
-        config["main"]["parallel"] = str(args.parallel)
+        value = str(args.parallel)
+        log.debug("PARALLEL set from command line to %r", value)
+        config["main"]["parallel"] = value
 
     if args.strict is not None:
+        log.debug("STRICT set from command line")
         config["main"]["strict"] = "1"
+
+    if args.bare is not None:
+        log.debug("BARE set from command line to %r", args.bare)
+        config["main"]["bare"] = args.bare
 
     if "debug" not in config["main"]:
         config["main"]["debug"] = "0"
@@ -246,9 +257,36 @@ def _parse_args():
     parser.add_argument("--parallel", action="store", type=int, help="Number of parallel jobs.", default="1")
     parser.add_argument("--strict", action="store_true", help="Fail if linter not installed.", default=None)
     parser.add_argument("--config", "-c", action="store", help="Location of config (~/.config/lint-diffs)", default=USER_CONFIG)
+    parser.add_argument("--bare", "-b", action="store", help="Run only one linter with script-friendly output", default=None)
     parser.add_argument("--option", "-o", action="append", help="Pass option to underlying linter (name:opt=value)", default=[])
     args = parser.parse_args()
     return args
+
+
+def _get_linters(config, diffs):
+    """Returns a linters dictionary with names as key.
+
+    Linters dictionary will contain linter names as key and a set of filenames
+    for each of them. That will allow us to determine which linters should
+    run agains which filenames.
+
+    :param config: post-processed config dictionary
+    :param diffs: result of calling `read_diffs`
+    :return: linters dictionary
+
+    """
+    linters = defaultdict(set)
+    for fname in diffs:
+        _, ext = os.path.splitext(fname)
+        for linter_name in config.get(ext, []):
+            linters[linter_name].add(fname)
+    bare = config.get("bare", None)
+    if bare is None:
+        return linters
+    log.debug('Going bare mode with %r', bare)
+    if bare not in linters:
+        return {}
+    return {bare: linters.get(bare)}
 
 
 def main():
@@ -269,36 +307,35 @@ def main():
     if args.debug:
         log.setLevel(logging.DEBUG)
 
+    # Read config files and override them with command line arguments
     py_config = read_config(args)
-
     _alter_config_with_args(args, py_config)
 
+    # Create actual config dictionary to be used ahead, saving some common
+    # settings in local variables as well.
     config = _config_to_dict(py_config)
-
+    strict = config.get("strict", False)
+    parallel = config.get("parallel", 1)
+    bare = config.get("bare", None)
     if config["debug"]:
         log.setLevel(logging.DEBUG)
 
     diffs = read_diffs()
-
     log.debug("diffs: %s", list(diffs))
 
-    linters = {}
-    for fname in diffs:
-        _, ext = os.path.splitext(fname)
-        if ext in config:
-            for linter_name in config[ext]:
-                if linter_name not in linters:
-                    linters[linter_name] = set()
-                linters[linter_name].add(fname)
+    # Get filenames to be ran for each key-d linter name
+    linters = _get_linters(config, diffs)
+    log.debug("linters: %s, strict: %s, parallel: %s", linters, strict, parallel)
 
-    if not linters:
+    #
+    # BAIL OUT!
+    #
+    # Don't even try going ahead as we have no linter to be executed, or at
+    # least no linter to for current change-set extensions
+    #
+    if not linters or bare and bare not in linters:
         log.debug("no files need linting")
         return
-
-    strict = config.get("strict", False)
-    parallel = config.get("parallel", 1)
-
-    log.debug("linters: %s, strict: %s, parallel: %s", linters, strict, parallel)
 
     def print_lint(item):
         """Run linter, print output to screen."""
@@ -306,17 +343,21 @@ def main():
         ret = do_lint(config, linter, diffs, list(files))
         with CONSOLE_LOCK:
             print(ret.output)
-            print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
+            if not bare:
+                print("=== %s: mine=%s, always=%s\n" % (linter, ret.mine, ret.always))
         if ret.returncode == NOTFOUND:
             return 1 if strict else 0
         return ret.linted > 0 and (ret.returncode or 1)
 
+    # By this moment, if we are running in bare mode, we will get only the
+    # bare linter in linters dictionary.
     if parallel > 1:
+        log.debug("Going parallel mode with %r", parallel)
         pool = multiprocessing.dummy.Pool(parallel)
         mapper = pool.map
     else:
+        log.debug("Going ordinary mode")
         mapper = map
-
     exitcode = max(mapper(print_lint, linters.items()))
 
     if exitcode != 0:
